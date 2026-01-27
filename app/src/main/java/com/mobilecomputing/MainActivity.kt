@@ -2,6 +2,7 @@ package com.mobilecomputing
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -121,6 +122,10 @@ fun FoodPage(
     )
 
     val conf = LocalConfiguration.current;
+
+    BackHandler(expanded) {
+        setExpanded(false)
+    }
 
     Box(
         Modifier.fillMaxSize(),
