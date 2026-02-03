@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -191,43 +192,51 @@ fun FoodDetails(
         setExpanded(false)
         scope.launch { scrollState.scrollTo(0) }
     }
-    Column(
+    Box(
         modifier = Modifier
-            .verticalScroll(scrollState)
-            .background(Color.White),
-    ) {
-        Box() {
-            FoodImage(
+            .fillMaxHeight()
+            .background(Color.White)
+    )
+    {
+        Column(
+            modifier = Modifier
+                .verticalScroll(scrollState)
+                .background(Color.White)
+                .fillMaxHeight(),
+        ) {
+            Box() {
+                FoodImage(
+                    modifier = Modifier
+                        .align(
+                            // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
+                            BiasAlignment(0.0f, 0.0f)
+                        )
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() })
+                        {
+                            setExpanded(false)
+                            scope.launch { scrollState.scrollTo(0) }
+                        }
+                )
+            }
+            Text(
+                text = food.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 8.em,
+                color = Color.Black,
                 modifier = Modifier
-                    .align(
-                        // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
-                        BiasAlignment(0.0f, 0.0f)
-                    )
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() })
-                    {
-                        setExpanded(false)
-                        scope.launch { scrollState.scrollTo(0) }
-                    }
+                    .padding(all = 12.dp)
+                    .padding(bottom = 0.dp),
+            )
+            Text(
+                text = food.textBody,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Black,
+                modifier = Modifier
+                    .padding(all = 12.dp),
             )
         }
-        Text(
-            text = food.name,
-            style = MaterialTheme.typography.titleLarge,
-            fontSize = 8.em,
-            color = Color.Black,
-            modifier = Modifier
-                .padding(all = 12.dp)
-                .padding(bottom = 0.dp),
-        )
-        Text(
-            text = food.textBody,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Black,
-            modifier = Modifier
-                .padding(all = 12.dp),
-        )
     }
 }
 
