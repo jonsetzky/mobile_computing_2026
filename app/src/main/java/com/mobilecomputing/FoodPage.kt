@@ -132,11 +132,17 @@ fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) 
 @Composable
 fun FoodDetails(
     food: Food,
+    expanded: Boolean,
     setExpanded: (Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
+
+    BackHandler(expanded) {
+        setExpanded(false)
+        scope.launch { scrollState.scrollTo(0) }
+    }
     Column(
         modifier = Modifier
             .verticalScroll(scrollState)
@@ -186,9 +192,6 @@ fun FoodPage(
 
     val conf = LocalConfiguration.current;
 
-    BackHandler(expanded) {
-        setExpanded(false)
-    }
 
     if (!expanded) {
         AddFoodButton(onAddFoodClick = onAddFoodClick)
@@ -200,7 +203,7 @@ fun FoodPage(
         exit = slideOutVertically(targetOffsetY = { conf.screenHeightDp / 2 + 32 }),
         modifier = Modifier,
     ) {
-        FoodDetails(food, setExpanded)
+        FoodDetails(food, expanded, setExpanded)
     }
 
 }
