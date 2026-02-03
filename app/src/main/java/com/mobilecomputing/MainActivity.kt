@@ -28,10 +28,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
@@ -127,6 +133,23 @@ fun FoodPage(
         setExpanded(false)
     }
 
+    Row(Modifier.zIndex(100.0f)) {
+        Spacer(Modifier.weight(1f))
+        Button(
+            onClick = {
+                println("click!");
+            },
+            modifier = Modifier.padding(end = 12.dp, top = 42.dp),
+            contentPadding = PaddingValues(3.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ) {
+            Text(
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 8.em,
+                text = "\uff0b"
+            )
+        }
+    }
     Box(
         Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -138,7 +161,9 @@ fun FoodPage(
                     BiasAlignment(0.0f, 0.0f)
                 )
                 .blur(32.dp)
-                .clickable(indication = null,interactionSource = remember { MutableInteractionSource() }) {
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }) {
                     setExpanded(true)
                 },
             contentScale = ContentScale.FillBounds,
@@ -151,7 +176,8 @@ fun FoodPage(
                         .align(
                             // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
                             BiasAlignment(0.0f, 0.0f)
-                        ).alpha(if (showBareImage) 1.0f else 0.0f)
+                        )
+                        .alpha(if (showBareImage) 1.0f else 0.0f)
                 )
                 Text(
                     text = title,
@@ -187,10 +213,12 @@ fun FoodPage(
                             // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
                             BiasAlignment(0.0f, 0.0f)
                         )
-                        .clickable(indication = null,interactionSource = remember { MutableInteractionSource() })
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() })
                         {
                             setExpanded(!expanded)
-                            scope.launch {scrollState.scrollTo(0) }
+                            scope.launch { scrollState.scrollTo(0) }
                         }
                 )
                 Text(
