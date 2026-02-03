@@ -73,7 +73,9 @@ fun PrevFoodButton(onPrevFoodClick: () -> Unit) {
             onClick = {
                 onPrevFoodClick()
             },
-            modifier = Modifier.padding(top = 24.dp).align(Alignment.TopCenter),
+            modifier = Modifier
+                .padding(top = 24.dp)
+                .align(Alignment.TopCenter),
             contentPadding = PaddingValues(3.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
         ) {
@@ -95,7 +97,9 @@ fun NextFoodButton(onNextFoodClick: () -> Unit) {
             onClick = {
                 onNextFoodClick()
             },
-            modifier = Modifier.padding(bottom = 24.dp).align(Alignment.BottomCenter),
+            modifier = Modifier
+                .padding(bottom = 24.dp)
+                .align(Alignment.BottomCenter),
             contentPadding = PaddingValues(3.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
         ) {
@@ -251,8 +255,10 @@ fun FoodPage(
     ) {
         FoodDetails(food, expanded, setExpanded)
     }
-    if (onPrevFoodClick != null)
-        PrevFoodButton(onPrevFoodClick = onPrevFoodClick)
-    if (onNextFoodClick != null)
-        NextFoodButton(onNextFoodClick = onNextFoodClick)
+    if (!expanded) {
+        if (onPrevFoodClick != null)
+            PrevFoodButton(onPrevFoodClick = onPrevFoodClick)
+        if (onNextFoodClick != null)
+            NextFoodButton(onNextFoodClick = onNextFoodClick)
+    }
 }
