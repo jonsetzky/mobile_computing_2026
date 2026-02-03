@@ -2,8 +2,6 @@ package com.mobilecomputing
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
@@ -24,7 +22,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,57 +42,7 @@ import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 
 @Composable
-fun FoodImage(
-    modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Fit,
-    colorFilter: ColorFilter? = null
-) {
-    Image(
-        painter = painterResource(R.drawable.cheesecake),
-        contentDescription = "A cheesecake",
-        contentScale = contentScale,
-        modifier = modifier,
-        colorFilter = colorFilter
-    )
-}
-
-@Composable
-fun FoodPage(
-    title: String,
-    textBody: String,
-) {
-    val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
-
-    val (expanded, setExpanded) = remember { mutableStateOf(false) }
-    val (showBareImage, setShowBareImage) = remember { mutableStateOf(true) }
-
-
-    // this snippet by AI
-    val backgroundColor by animateColorAsState(
-        targetValue = if (expanded) Color.White else Color.Transparent,
-        finishedListener = { color ->
-            if (color == Color.White) {
-                setShowBareImage(false)
-            } else {
-                setShowBareImage(true)
-            }
-        },
-        animationSpec = tween(350)
-    )
-    val textColor by animateColorAsState(
-        targetValue = if (expanded) Color.Black else Color.Transparent
-    )
-    val bareTextColor by animateColorAsState(
-        targetValue = if (!expanded) Color.White else Color.Transparent
-    )
-
-    val conf = LocalConfiguration.current;
-
-    BackHandler(expanded) {
-        setExpanded(false)
-    }
-
+fun AddFoodButton() {
     Row(Modifier.zIndex(100.0f)) {
         Spacer(Modifier.weight(1f))
         Button(
@@ -113,6 +60,25 @@ fun FoodPage(
             )
         }
     }
+}
+
+@Composable
+fun FoodImage(
+    modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Fit,
+    colorFilter: ColorFilter? = null
+) {
+    Image(
+        painter = painterResource(R.drawable.cheesecake),
+        contentDescription = "A cheesecake",
+        contentScale = contentScale,
+        modifier = modifier,
+        colorFilter = colorFilter
+    )
+}
+
+@Composable
+fun FoodHeroView(title: String, expanded: Boolean, setExpanded: (Boolean) -> Unit) {
     Box(
         Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -140,7 +106,7 @@ fun FoodPage(
                             // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
                             BiasAlignment(0.0f, 0.0f)
                         )
-                        .alpha(if (showBareImage) 1.0f else 0.0f)
+                        .alpha(1.0f)
                 )
                 Text(
                     text = title,
@@ -150,70 +116,90 @@ fun FoodPage(
                         )
                         .padding(all = 12.dp)
                         .padding(bottom = 0.dp)
-                        .alpha(if (showBareImage) 1.0f else 0.0f),
-                    color = bareTextColor,
+                        .alpha(1.0f),
+                    color = Color.White,
                     style = MaterialTheme.typography.titleLarge,
                     fontSize = 8.em,
                 )
             }
         }
     }
+}
+
+
+@Composable
+fun FoodDetails(
+    title: String,
+    textBody: String,
+    setExpanded: (Boolean) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .verticalScroll(scrollState)
+            .background(Color.White),
+    ) {
+        Box() {
+            FoodImage(
+                modifier = Modifier
+                    .align(
+                        // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
+                        BiasAlignment(0.0f, 0.0f)
+                    )
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() })
+                    {
+                        setExpanded(false)
+                        scope.launch { scrollState.scrollTo(0) }
+                    }
+            )
+        }
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontSize = 8.em,
+            color = Color.Black,
+            modifier = Modifier
+                .padding(all = 12.dp)
+                .padding(bottom = 0.dp),
+        )
+        Text(
+            text = textBody,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Black,
+            modifier = Modifier
+                .padding(all = 12.dp),
+        )
+    }
+}
+
+@Composable
+fun FoodPage(
+    title: String,
+    textBody: String,
+) {
+    val (expanded, setExpanded) = remember { mutableStateOf(false) }
+
+    val conf = LocalConfiguration.current;
+
+    BackHandler(expanded) {
+        setExpanded(false)
+    }
+
+    if (!expanded) {
+        AddFoodButton()
+    }
+    FoodHeroView(title = title, setExpanded = setExpanded, expanded = expanded)
     AnimatedVisibility(
         expanded,
         enter = slideInVertically(initialOffsetY = { conf.screenHeightDp / 2 }),
         exit = slideOutVertically(targetOffsetY = { conf.screenHeightDp / 2 + 32 }),
         modifier = Modifier,
     ) {
-        Column(
-            modifier = Modifier
-                .verticalScroll(scrollState)
-                .background(backgroundColor),
-        ) {
-            Box() {
-                FoodImage(
-                    modifier = Modifier
-                        .align(
-                            // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
-                            BiasAlignment(0.0f, 0.0f)
-                        )
-                        .clickable(
-                            indication = null,
-                            interactionSource = remember { MutableInteractionSource() })
-                        {
-                            setExpanded(!expanded)
-                            scope.launch { scrollState.scrollTo(0) }
-                        }
-                )
-                Text(
-                    text = title,
-                    modifier = Modifier
-                        .align(
-                            Alignment.BottomStart
-                        )
-                        .padding(all = 12.dp)
-                        .padding(bottom = 0.dp),
-                    color = bareTextColor,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontSize = 8.em,
-                )
-            }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontSize = 8.em,
-                color = textColor,
-                modifier = Modifier
-                    .padding(all = 12.dp)
-                    .padding(bottom = 0.dp),
-            )
-            Text(
-                text = textBody,
-                style = MaterialTheme.typography.bodyMedium,
-                color = textColor,
-                modifier = Modifier
-                    .padding(all = 12.dp),
-            )
-        }
+        FoodDetails(title = title, textBody, setExpanded = setExpanded)
     }
 
 }
