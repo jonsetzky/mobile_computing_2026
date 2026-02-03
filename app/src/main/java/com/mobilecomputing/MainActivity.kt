@@ -43,8 +43,9 @@ fun App() {
     val loremIpsum = context.getString(R.string.lorem_ipsum)
     val food1 = Food("A cheesecake", loremIpsum)
     val food2 = Food("A woodhat", loremIpsum)
+    val food3 = Food("A short hat", "Short description")
 
-    val foods = arrayOf(food1, food2);
+    var foods = arrayOf(food1, food2, food3);
 
     NavHost(
         navController = navController,
@@ -70,7 +71,10 @@ fun App() {
             )
         }
         composable<AddFood> {
-            AddFoodPage()
+            AddFoodPage(onAddFood = {food: Food ->
+                foods += food
+                navController.navigateUp()
+            })
         }
     }
 }
