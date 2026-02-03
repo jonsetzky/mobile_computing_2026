@@ -65,6 +65,50 @@ fun AddFoodButton(onAddFoodClick: () -> Unit) {
 }
 
 @Composable
+fun PrevFoodButton(onPrevFoodClick: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Button(
+            onClick = {
+                onPrevFoodClick()
+            },
+            modifier = Modifier.padding(top = 24.dp).align(Alignment.TopCenter),
+            contentPadding = PaddingValues(3.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ) {
+            Text(
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 16.em,
+                text = "\u2191"
+            )
+        }
+    }
+}
+
+@Composable
+fun NextFoodButton(onNextFoodClick: () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        Button(
+            onClick = {
+                onNextFoodClick()
+            },
+            modifier = Modifier.padding(bottom = 24.dp).align(Alignment.BottomCenter),
+            contentPadding = PaddingValues(3.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ) {
+            Text(
+                style = MaterialTheme.typography.titleLarge,
+                fontSize = 16.em,
+                text = "\u2193"
+            )
+        }
+    }
+}
+
+@Composable
 fun FoodImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
@@ -186,7 +230,9 @@ fun FoodDetails(
 @Composable
 fun FoodPage(
     food: Food,
-    onAddFoodClick: () -> Unit
+    onAddFoodClick: () -> Unit,
+    onNextFoodClick: (() -> Unit)?,
+    onPrevFoodClick: (() -> Unit)?
 ) {
     val (expanded, setExpanded) = remember { mutableStateOf(false) }
 
@@ -205,5 +251,8 @@ fun FoodPage(
     ) {
         FoodDetails(food, expanded, setExpanded)
     }
-
+    if (onPrevFoodClick != null)
+        PrevFoodButton(onPrevFoodClick = onPrevFoodClick)
+    if (onNextFoodClick != null)
+        NextFoodButton(onNextFoodClick = onNextFoodClick)
 }
