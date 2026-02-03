@@ -1,5 +1,6 @@
 package com.mobilecomputing
 
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -39,15 +40,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
+import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 
 @Composable
-fun AddFoodButton() {
+fun AddFoodButton(onAddFoodClick: () -> Unit) {
     Row(Modifier.zIndex(100.0f)) {
         Spacer(Modifier.weight(1f))
         Button(
             onClick = {
-                println("click!");
+                onAddFoodClick()
             },
             modifier = Modifier.padding(end = 12.dp, top = 42.dp),
             contentPadding = PaddingValues(3.dp),
@@ -78,7 +80,7 @@ fun FoodImage(
 }
 
 @Composable
-fun FoodHeroView(title: String, expanded: Boolean, setExpanded: (Boolean) -> Unit) {
+fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) {
     Box(
         Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -109,7 +111,7 @@ fun FoodHeroView(title: String, expanded: Boolean, setExpanded: (Boolean) -> Uni
                         .alpha(1.0f)
                 )
                 Text(
-                    text = title,
+                    text = food.name,
                     modifier = Modifier
                         .align(
                             Alignment.BottomStart
@@ -129,8 +131,7 @@ fun FoodHeroView(title: String, expanded: Boolean, setExpanded: (Boolean) -> Uni
 
 @Composable
 fun FoodDetails(
-    title: String,
-    textBody: String,
+    food: Food,
     setExpanded: (Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -158,7 +159,7 @@ fun FoodDetails(
             )
         }
         Text(
-            text = title,
+            text = food.name,
             style = MaterialTheme.typography.titleLarge,
             fontSize = 8.em,
             color = Color.Black,
@@ -167,7 +168,7 @@ fun FoodDetails(
                 .padding(bottom = 0.dp),
         )
         Text(
-            text = textBody,
+            text = food.textBody,
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Black,
             modifier = Modifier
@@ -178,8 +179,8 @@ fun FoodDetails(
 
 @Composable
 fun FoodPage(
-    title: String,
-    textBody: String,
+    food: Food,
+    onAddFoodClick: () -> Unit
 ) {
     val (expanded, setExpanded) = remember { mutableStateOf(false) }
 
@@ -190,16 +191,16 @@ fun FoodPage(
     }
 
     if (!expanded) {
-        AddFoodButton()
+        AddFoodButton(onAddFoodClick = onAddFoodClick)
     }
-    FoodHeroView(title = title, setExpanded = setExpanded, expanded = expanded)
+    FoodHeroView(food, expanded, setExpanded)
     AnimatedVisibility(
         expanded,
         enter = slideInVertically(initialOffsetY = { conf.screenHeightDp / 2 }),
         exit = slideOutVertically(targetOffsetY = { conf.screenHeightDp / 2 + 32 }),
         modifier = Modifier,
     ) {
-        FoodDetails(title = title, textBody, setExpanded = setExpanded)
+        FoodDetails(food, setExpanded)
     }
 
 }
