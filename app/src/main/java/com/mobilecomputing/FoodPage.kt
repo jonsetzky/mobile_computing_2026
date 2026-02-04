@@ -1,6 +1,5 @@
 package com.mobilecomputing
 
-import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -41,7 +40,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 
 @Composable

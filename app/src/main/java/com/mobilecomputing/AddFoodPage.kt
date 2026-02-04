@@ -48,8 +48,10 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
         TextField(value = name, onValueChange = { v -> setName(v) }, singleLine = true)
         Text("Description")
         TextField(value = description, onValueChange = { v -> setDescription(v) }, singleLine = false)
+        Spacer(Modifier.size(10.dp))
         Button(onClick = {onAddFood(Food(name, description))}) {
-            Text("Create")
+            Text(
+                fontSize = 8.em, text="Create")
         }
     }
 }
