@@ -40,6 +40,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
+import com.mobilecomputing.db.Food
 import kotlinx.coroutines.launch
 
 @Composable
@@ -158,7 +159,7 @@ fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) 
                         .alpha(1.0f)
                 )
                 Text(
-                    text = food.name,
+                    text = food.name ?: "n/a",
                     modifier = Modifier
                         .align(
                             Alignment.BottomStart
@@ -219,7 +220,7 @@ fun FoodDetails(
                 )
             }
             Text(
-                text = food.name,
+                text = food.name ?: "n/a",
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = 8.em,
                 color = Color.Black,
@@ -228,7 +229,7 @@ fun FoodDetails(
                     .padding(bottom = 0.dp),
             )
             Text(
-                text = food.textBody,
+                text = food.description ?: "n/a",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Black,
                 modifier = Modifier

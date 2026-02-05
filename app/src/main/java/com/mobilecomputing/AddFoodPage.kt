@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.mobilecomputing.db.Food
 
 fun getTopInset(view: View, density: Density): Dp {
     // Get the top inset (status bar + notch)
@@ -49,7 +50,7 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
         Text("Description")
         TextField(value = description, onValueChange = { v -> setDescription(v) }, singleLine = false)
         Spacer(Modifier.size(10.dp))
-        Button(onClick = {onAddFood(Food(name, description))}) {
+        Button(onClick = {onAddFood(Food(name=name, description=description))}) {
             Text(
                 fontSize = 8.em, text="Create")
         }
