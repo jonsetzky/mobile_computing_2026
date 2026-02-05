@@ -135,10 +135,18 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
     private val _currentFood = MutableStateFlow<Food?>(null)
     val currentFood: StateFlow<Food?> = _currentFood.asStateFlow()
 
+    private val _isLast = MutableStateFlow<Boolean>(false)
+    val isLast: StateFlow<Boolean> = _isLast.asStateFlow()
+
+    private val _isFirst = MutableStateFlow<Boolean>(false)
+    val isFirst: StateFlow<Boolean> = _isFirst.asStateFlow()
+
     init {
         // Load the first food when ViewModel starts
         viewModelScope.launch {
             _currentFood.value = repository.getFirstFood()
+            _isFirst.value = true
+            _isLast.value = false
         }
     }
 
@@ -154,7 +162,13 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         viewModelScope.launch {
             val uid = _currentFood.value?.uid ?: throw NullPointerException("currentfood is null")
             val next = repository.getNextFood(uid)
+            if (next == null) {
+                Log.w("WARN", "Trying to go to next food despite it being null")
+                return@launch
+            }
             _currentFood.value = next
+            _isFirst.value = false
+            _isLast.value = (repository.getNextFood(next.uid) == null)
         }
     }
 
@@ -162,7 +176,13 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
         viewModelScope.launch {
             val uid = _currentFood.value?.uid ?: throw NullPointerException("currentfood is null")
             val prev = repository.getPreviousFood(uid)
+            if (prev == null) {
+                Log.w("WARN", "Trying to go to previous food despite it being null")
+                return@launch
+            }
             _currentFood.value = prev
+            _isLast.value = false
+            _isFirst.value = (repository.getPreviousFood(prev.uid) == null)
         }
     }
 
