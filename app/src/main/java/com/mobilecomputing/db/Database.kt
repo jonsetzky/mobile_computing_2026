@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import java.io.File
+import java.net.URI
 
 @Entity
 @Serializable
@@ -69,9 +71,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "food_database"
+                    context.applicationContext, AppDatabase::class.java, "food_database"
                 ).addCallback(AppDatabaseCallback(context, scope)).build()
                 INSTANCE = instance
                 instance
@@ -80,8 +80,7 @@ abstract class AppDatabase : RoomDatabase() {
     }
 
     private class AppDatabaseCallback(
-        private val context: Context,
-        private val scope: CoroutineScope
+        private val context: Context, private val scope: CoroutineScope
     ) : RoomDatabase.Callback() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
@@ -100,10 +99,8 @@ abstract class AppDatabase : RoomDatabase() {
 
             foodDao.insertAll(
                 Food(name = "A cheesecake", description = loremIpsum),
-                Food(name = "A woodhat", description = loremIpsum),
-                Food(name = "A short hat", description = "Short description")
             )
-            Log.i("STATE","database intialized")
+            Log.i("STATE", "database intialized")
         }
     }
 }
@@ -191,8 +188,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
 class FoodViewModelFactory(private val repository: FoodRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(FoodViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return FoodViewModel(repository) as T
+            @Suppress("UNCHECKED_CAST") return FoodViewModel(repository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

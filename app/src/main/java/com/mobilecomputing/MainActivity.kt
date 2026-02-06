@@ -35,7 +35,6 @@ object FoodView
 fun App(foodViewModel: FoodViewModel) {
     val navController = rememberNavController();
 
-
     NavHost(
         navController = navController,
         startDestination = FoodView,
@@ -46,10 +45,6 @@ fun App(foodViewModel: FoodViewModel) {
             val food by foodViewModel.currentFood.collectAsState()
             val isLast by foodViewModel.isLast.collectAsState()
             val isFirst by foodViewModel.isFirst.collectAsState()
-//            val onNextFoodClick: (() -> Unit)? =
-//                if (nextFood == null) null else fun() { navController.navigate(route = nextFood) }
-//            val onPrevFoodClick: (() -> Unit)? =
-//                if (prevFood == null) null else fun() { navController.navigate(route = prevFood) }
 
             if (food == null) {
                 Text("waiting for food")

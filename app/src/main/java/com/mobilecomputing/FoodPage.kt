@@ -36,10 +36,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
+import coil3.compose.AsyncImage
 import com.mobilecomputing.db.Food
 import kotlinx.coroutines.launch
 
@@ -116,15 +118,27 @@ fun NextFoodButton(onNextFoodClick: () -> Unit) {
 fun FoodImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
+    food: Food
 ) {
-    Image(
-        painter = painterResource(R.drawable.cheesecake),
-        contentDescription = "A cheesecake",
-        contentScale = contentScale,
-        modifier = modifier,
-        colorFilter = colorFilter
-    )
+    val uri = food.imageUrl
+    if (uri == null) {
+        Image(
+            painter = painterResource(R.drawable.cheesecake),
+            contentDescription = food.name,
+            contentScale = contentScale,
+            modifier = modifier,
+            colorFilter = colorFilter
+        )
+    } else {
+        AsyncImage(
+            model = uri,
+            contentDescription = food.name,
+            contentScale = contentScale,
+            modifier = modifier,
+            colorFilter = colorFilter
+        )
+    }
 }
 
 @Composable
@@ -147,10 +161,12 @@ fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) 
                 },
             contentScale = ContentScale.FillBounds,
             colorFilter = ColorFilter.tint(Color(0xFFAAAAAA), blendMode = BlendMode.Multiply),
+            food = food,
         )
         if (!expanded) {
             Box() {
                 FoodImage(
+                    food = food,
                     modifier = Modifier
                         .align(
                             // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
@@ -205,6 +221,7 @@ fun FoodDetails(
         ) {
             Box() {
                 FoodImage(
+                    food = food,
                     modifier = Modifier
                         .align(
                             // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
