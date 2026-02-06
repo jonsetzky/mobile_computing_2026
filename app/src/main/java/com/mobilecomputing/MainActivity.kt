@@ -43,8 +43,8 @@ fun App(foodViewModel: FoodViewModel) {
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None }) {
             val food by foodViewModel.currentFood.collectAsState()
-            val isLast by foodViewModel.isLast.collectAsState()
-            val isFirst by foodViewModel.isFirst.collectAsState()
+            val foodCount by foodViewModel.foodCount.collectAsState()
+            val currentFoodIndex by foodViewModel.currentFoodIndex.collectAsState()
 
             if (food == null) {
                 Text("waiting for food")
@@ -52,8 +52,8 @@ fun App(foodViewModel: FoodViewModel) {
                 FoodPage(
                     food = food ?: throw NullPointerException("food is null."),
                     onAddFoodClick = { navController.navigate(route = AddFood) },
-                    onNextFoodClick = if (isLast) null else fun() { foodViewModel.loadNextFood() },
-                    onPrevFoodClick =if (isFirst) null else fun() { foodViewModel.loadPreviousFood() }
+                    onNextFoodClick = if (foodCount <= currentFoodIndex + 1) null else fun() { foodViewModel.loadNextFood() },
+                    onPrevFoodClick = if (currentFoodIndex == 0) null else fun() { foodViewModel.loadPreviousFood() }
                 )
             }
         }
@@ -70,15 +70,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val applicationScope = CoroutineScope(SupervisorJob());
+        Log.i("STATE", "creating database")
+        val database = AppDatabase.getDatabase(this, applicationScope)
+        val repository = FoodRepository(database.foodDao())
+
         enableEdgeToEdge()
         setContent {
-
-            val applicationScope = CoroutineScope(SupervisorJob());
-
-            Log.i("STATE", "creating database")
-            val database by lazy { AppDatabase.getDatabase(this, applicationScope) }
-            val repository by lazy { FoodRepository(database.foodDao()) }
-
             val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(repository))
 
             MobileComputingTheme {

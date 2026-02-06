@@ -18,6 +18,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mobilecomputing.R
+import com.mobilecomputing.db.AppDatabase.Companion.databaseReady
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+        val databaseReady = CompletableDeferred<Unit>()
         fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -87,6 +90,7 @@ abstract class AppDatabase : RoomDatabase() {
             INSTANCE?.let { database ->
                 scope.launch {
                     populateDatabase(database.foodDao())
+                    databaseReady.complete(Unit)
                 }
             }
         }
@@ -100,7 +104,7 @@ abstract class AppDatabase : RoomDatabase() {
             foodDao.insertAll(
                 Food(name = "A cheesecake", description = loremIpsum),
             )
-            Log.i("STATE", "database intialized")
+            Log.i("STATE", "database initialized")
         }
     }
 }
@@ -125,6 +129,11 @@ class FoodRepository(private val foodDao: FoodDao) {
     suspend fun getPreviousFood(currentUid: Int): Food? {
         return foodDao.getPreviousFood(currentUid)
     }
+
+    @WorkerThread
+    suspend fun getFoodCount(): Int {
+        return foodDao.getFoodCount()
+    }
 }
 
 class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
@@ -132,23 +141,28 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
     private val _currentFood = MutableStateFlow<Food?>(null)
     val currentFood: StateFlow<Food?> = _currentFood.asStateFlow()
 
-    private val _isLast = MutableStateFlow<Boolean>(false)
-    val isLast: StateFlow<Boolean> = _isLast.asStateFlow()
+    private val _foodCount = MutableStateFlow<Int>(0)
+    val foodCount: StateFlow<Int> = _foodCount.asStateFlow()
 
-    private val _isFirst = MutableStateFlow<Boolean>(false)
-    val isFirst: StateFlow<Boolean> = _isFirst.asStateFlow()
+    private val _currentFoodIndex = MutableStateFlow<Int>(0)
+    val currentFoodIndex = _currentFoodIndex.asStateFlow()
 
     init {
         // Load the first food when ViewModel starts
         viewModelScope.launch {
-            _currentFood.value = repository.getFirstFood()
-            _isFirst.value = true
-            _isLast.value = false
+            var firstFood = repository.getFirstFood()
+            if (firstFood == null)
+                databaseReady.await()
+            firstFood = repository.getFirstFood()
+            _currentFood.value = firstFood
+            _currentFoodIndex.value = 0
+            _foodCount.value = repository.getFoodCount()
         }
     }
 
     fun insert(food: Food) = viewModelScope.launch {
         repository.insert(food)
+        _foodCount.value += 1
     }
 
     fun getFirstFood() = viewModelScope.launch {
@@ -164,8 +178,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
                 return@launch
             }
             _currentFood.value = next
-            _isFirst.value = false
-            _isLast.value = (repository.getNextFood(next.uid) == null)
+            _currentFoodIndex.value += 1
         }
     }
 
@@ -178,8 +191,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
                 return@launch
             }
             _currentFood.value = prev
-            _isLast.value = false
-            _isFirst.value = (repository.getPreviousFood(prev.uid) == null)
+            _currentFoodIndex.value -= 1
         }
     }
 

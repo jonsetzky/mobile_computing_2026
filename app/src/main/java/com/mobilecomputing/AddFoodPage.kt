@@ -99,7 +99,7 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
         }
         Spacer(Modifier.size(56.dp))
         Button(
-            onClick = { onAddFood(Food(name = name, description = description, imageUrl = imageUri)) },
+            onClick = { onAddFood(Food(name = name, description = description, imageUrl = savedImageUri)) },
             modifier = Modifier.align(
                 Alignment.CenterHorizontally
             )
