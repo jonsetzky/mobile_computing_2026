@@ -22,6 +22,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import com.mobilecomputing.db.AppDatabase
 import com.mobilecomputing.db.Food
 import com.mobilecomputing.db.FoodRepository
@@ -29,6 +30,7 @@ import com.mobilecomputing.db.FoodViewModel
 import com.mobilecomputing.db.FoodViewModelFactory
 import com.mobilecomputing.ui.theme.MobileComputingTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -118,17 +120,19 @@ class MainActivity : ComponentActivity() {
                 // to handle the case where the user grants the permission. See the documentation
                 // for ActivityCompat#requestPermissions for more details.
                 ActivityCompat.requestPermissions(this@MainActivity, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 10)
-                return@with
+                //return@with
             }
             // notificationId is a unique int for each notification that you must define.
             notify(NOTIFICATION_ID, builder.build())
         }
     }
 
+    private var backgroundJob: Job? = null
+
     override fun onStop() {
         super.onStop()
         Log.d("STATE", "exited app");
-        CoroutineScope(SupervisorJob()).launch {
+        backgroundJob = lifecycleScope.launch {
             delay(5000)
 
             // this if condition from AI
@@ -137,6 +141,11 @@ class MainActivity : ComponentActivity() {
                 sendNotification("You haven't used FoodTok for a while. Consider finding your next meal!")
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        backgroundJob?.cancel();
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
