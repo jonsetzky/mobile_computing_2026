@@ -4,6 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -35,6 +39,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 
 @Serializable
@@ -78,10 +85,74 @@ fun App(foodViewModel: FoodViewModel) {
     }
 }
 
+fun magnitude(vec: FloatArray): Float {
+    return sqrt(vec[0].pow(2)+vec[1].pow(2)+vec[2].pow(2))
+}
+
 class MainActivity : ComponentActivity() {
     companion object {
         const val CHANNEL_ID = "noti";
         var NOTIFICATION_ID = 0;
+    }
+
+    private class SensorListener : SensorEventListener {
+        companion object {
+            const val HISTORY_SIZE = 20
+            const val HISTORY_ENTRY_LEN = 5
+            const val SHAKE_COOLDOWN = 50 // SHAKE_COOLDOWN/samplespersecond = 50/20 = 2.5 seconds
+        }
+
+        var index: Int = 0
+        // [x, y, z, mag, sharp?]
+        val history: Array<FloatArray> = Array(HISTORY_SIZE) { FloatArray(HISTORY_ENTRY_LEN) }
+        var shakeCooldown: Int = 0
+
+        override fun onSensorChanged(event: SensorEvent?) {
+            // this is called ~20 times a second for accelerometer
+            if (event == null) {
+                return
+            }
+
+            val values = event.values;
+
+            val magnitude = magnitude(values)
+            var sharp = 0f
+//            Log.i("ACCELEROMETER", "${magnitude}: ${values[0]},${values[1]},${values[2]}")
+
+            // check for shake every 5th update => 4 times a second
+            if (index % 5 == 0 && shakeCooldown <= 0) {
+                val sum = FloatArray(HISTORY_ENTRY_LEN)
+                for (e in history) {
+                    for (i in 0..<HISTORY_ENTRY_LEN) {
+                        sum[i] += e[i]
+                    }
+                }
+                val sumMag = magnitude(floatArrayOf(sum[0], sum[1], sum[2]))
+                val magSum = sum[3]
+                //Log.i("ACCELEROMETER", "${sum[0]},${sum[1]},${sum[2]},${sum[3]},${sum[4]}: sumMag ${sumMag}, magSum ${magSum}")
+                if (magSum > sumMag*3) {
+                    //Log.i("ACCELEROMETER", "sharp!")
+                    sharp = 1f
+                }
+
+                // a total of 3 sharps indicates a shake
+                if (sum[4] >= 3) {
+                    Log.i("ACCELEROMETER", "shake!")
+                    shakeCooldown = SHAKE_COOLDOWN
+                    index = 0
+                    return;
+                }
+            }
+
+            history[index] = values + floatArrayOf(magnitude, sharp)
+            index = (index + 1) % HISTORY_SIZE
+            shakeCooldown = max(0, shakeCooldown-1)
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            //TODO("Not yet implemented")
+        }
+
     }
 
     private fun createNotificationChannel() {
@@ -148,11 +219,33 @@ class MainActivity : ComponentActivity() {
         backgroundJob?.cancel();
     }
 
+    override fun onResume() {
+        super.onResume()
+        sensorListener = SensorListener()
+        mAccel?.also {accel->
+            sensorManager.registerListener(sensorListener, accel, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(sensorListener)
+        sensorListener = null
+    }
+
+    private lateinit var sensorManager: SensorManager
+    private var mAccel: Sensor? = null
+    private var sensorListener: SensorListener? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val applicationScope = CoroutineScope(SupervisorJob());
 
         val notificationChannel = createNotificationChannel();
+
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        mAccel = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+
 
         Log.i("STATE", "creating database")
         val database = AppDatabase.getDatabase(this, applicationScope)
