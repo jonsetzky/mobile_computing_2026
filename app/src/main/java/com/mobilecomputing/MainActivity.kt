@@ -3,7 +3,9 @@ package com.mobilecomputing
 import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -173,7 +175,7 @@ class MainActivity : ComponentActivity() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "foodtok_notification_channel",
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "foodtok notification channel"
         }
@@ -185,11 +187,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun sendNotification(message: String) {
-        var builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("My notification")
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true);
 
         with(NotificationManagerCompat.from(this)) {
             if (ActivityCompat.checkSelfPermission(
@@ -197,15 +206,7 @@ class MainActivity : ComponentActivity() {
                     android.Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
-                // TODO: Consider calling
-                // ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                // public fun onRequestPermissionsResult(requestCode: Int, permissions: Array&lt;out String&gt;,
-                //                                        grantResults: IntArray)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 10)
-                //return@with
+                Log.e("NOTIFICATION", "Cannot send notification due to missing permissions")
             }
             // notificationId is a unique int for each notification that you must define.
             notify(NOTIFICATION_ID, builder.build())
@@ -222,7 +223,7 @@ class MainActivity : ComponentActivity() {
 
             // this if condition from AI
             if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                Log.i("STATE", "sending invisibility notification")
+                Log.i("STATE", "trying to send invisibility notification")
                 sendNotification("You haven't used FoodTok for a while. Consider finding your next meal!")
             }
         }
@@ -272,6 +273,25 @@ class MainActivity : ComponentActivity() {
             MobileComputingTheme {
                 App(foodViewModel)
             }
+        }
+
+        with(NotificationManagerCompat.from(this)) {
+            if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                // ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                // public fun onRequestPermissionsResult(requestCode: Int, permissions: Array&lt;out String&gt;,
+                //                                        grantResults: IntArray)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 10)
+                //return@with
+            }
+
         }
     }
 }
