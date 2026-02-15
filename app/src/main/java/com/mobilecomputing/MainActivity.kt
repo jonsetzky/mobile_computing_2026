@@ -1,5 +1,6 @@
 package com.mobilecomputing
 
+import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -95,7 +96,7 @@ class MainActivity : ComponentActivity() {
         var NOTIFICATION_ID = 0;
     }
 
-    private class SensorListener : SensorEventListener {
+    private class SensorListener(val context: MainActivity) : SensorEventListener {
         companion object {
             const val HISTORY_SIZE = 20
             const val HISTORY_ENTRY_LEN = 5
@@ -137,6 +138,7 @@ class MainActivity : ComponentActivity() {
 
                 // a total of 3 sharps indicates a shake
                 if (sum[4] >= 3) {
+                    this@SensorListener.context.showAlert("TODO: Open camera", "Shaking the device would open the camera for adding a new food.")
                     Log.i("ACCELEROMETER", "shake!")
                     shakeCooldown = SHAKE_COOLDOWN
                     index = 0
@@ -153,6 +155,18 @@ class MainActivity : ComponentActivity() {
             //TODO("Not yet implemented")
         }
 
+    }
+
+    public fun showAlert(title: String, message: String) {
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -221,7 +235,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        sensorListener = SensorListener()
+        sensorListener = SensorListener(this)
         mAccel?.also {accel->
             sensorManager.registerListener(sensorListener, accel, SensorManager.SENSOR_DELAY_NORMAL)
         }
