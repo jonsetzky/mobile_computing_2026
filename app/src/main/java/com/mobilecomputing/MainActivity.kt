@@ -132,9 +132,9 @@ class MainActivity : ComponentActivity() {
                 }
                 val sumMag = magnitude(floatArrayOf(sum[0], sum[1], sum[2]))
                 val magSum = sum[3]
-                //Log.i("ACCELEROMETER", "${sum[0]},${sum[1]},${sum[2]},${sum[3]},${sum[4]}: sumMag ${sumMag}, magSum ${magSum}")
-                if (magSum > sumMag*3) {
-                    //Log.i("ACCELEROMETER", "sharp!")
+//                Log.i("ACCELEROMETER", "${sum[0]},${sum[1]},${sum[2]},${sum[3]},${sum[4]}: sumMag ${sumMag}, magSum ${magSum}")
+                if (magSum > sumMag*10) {
+//                    Log.i("ACCELEROMETER", "sharp!")
                     sharp = 1f
                 }
 
