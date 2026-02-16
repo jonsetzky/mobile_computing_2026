@@ -13,6 +13,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,6 +31,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import com.mobilecomputing.db.AppDatabase
 import com.mobilecomputing.db.Food
 import com.mobilecomputing.db.FoodRepository
@@ -40,6 +42,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlin.math.max
@@ -54,8 +58,17 @@ object AddFood
 object FoodView
 
 @Composable
-fun App(foodViewModel: FoodViewModel) {
+fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
     val navController = rememberNavController();
+
+    LaunchedEffect(Unit) {
+        events.collect { event ->
+            when (event) {
+                is MainEvent.OpenAddFoodCamera ->
+                    navController.navigate(AddFood)
+            }
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -97,6 +110,8 @@ class MainActivity : ComponentActivity() {
         const val CHANNEL_ID = "noti";
         var NOTIFICATION_ID = 0;
     }
+
+    private val events = MutableSharedFlow<MainEvent>()
 
     private class SensorListener(val context: MainActivity) : SensorEventListener {
         companion object {
@@ -141,10 +156,11 @@ class MainActivity : ComponentActivity() {
 
                 // a total of 3 sharps indicates a shake
                 if (sum[4] >= 3) {
-                    this@SensorListener.context.showAlert(
-                        "TODO: Open camera",
-                        "Shaking the device would open the camera for adding a new food."
-                    )
+//                    this@SensorListener.context.showAlert(
+//                        "TODO: Open camera",
+//                        "Shaking the device would open the camera for adding a new food."
+//                    )
+                    this@SensorListener.context.navToAddFoodWithCamera()
                     Log.i("ACCELEROMETER", "shake!")
                     shakeCooldown = SHAKE_COOLDOWN
                     index = 0
@@ -172,6 +188,12 @@ class MainActivity : ComponentActivity() {
                     dialog.dismiss()
                 }
                 .show()
+        }
+    }
+
+    private fun navToAddFoodWithCamera() {
+        lifecycleScope.launch {
+            events.emit(MainEvent.OpenAddFoodCamera())
         }
     }
 
@@ -276,7 +298,7 @@ class MainActivity : ComponentActivity() {
             val foodViewModel: FoodViewModel = viewModel(factory = FoodViewModelFactory(repository))
 
             MobileComputingTheme {
-                App(foodViewModel)
+                App(foodViewModel, events)
             }
         }
 
@@ -316,3 +338,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+sealed class MainEvent {
+    class OpenAddFoodCamera() : MainEvent()
+}
