@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -72,7 +73,7 @@ fun getTopInset(view: View, density: Density): Dp {
 }
 
 @Composable
-fun AddFoodPage(onAddFood: (Food) -> Unit) {
+fun AddFoodPage(onAddFood: (Food) -> Unit, openCamera: Boolean) {
     val context = LocalContext.current
     val (name, setName) = remember { mutableStateOf("") }
     val (description, setDescription) = remember { mutableStateOf("") }
@@ -81,26 +82,33 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
 
     val (cameraImageUri, setCameraImageUri) = remember { mutableStateOf("") }
     val (hasCameraPermission, setHasCameraPermission) = remember {
-        mutableStateOf(ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        setHasCameraPermission(isGranted)
-    }
-    val cameraLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { success ->
-        if (success) {
-            if (cameraImageUri.isEmpty()) {
-                Log.e("PhotoPicker", "Cannot save image because cameraImageUri is null!")
-                return@rememberLauncherForActivityResult
-            }
-            Log.i("CAMERA", "Successfully took a picture!")
-
-            Log.d("PhotoPicker", "Taken image URI: $cameraImageUri")
-            setImageUri(cameraImageUri)
-            val saved = saveImageFromUri(context, cameraImageUri.toUri())
-            setSavedImageUri(saved.toString())
-            Log.d("PhotoPicker", "Saved taken image to URI: $saved")
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            setHasCameraPermission(isGranted)
         }
-    }
+    val cameraLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { success ->
+            if (success) {
+                if (cameraImageUri.isEmpty()) {
+                    Log.e("PhotoPicker", "Cannot save image because cameraImageUri is null!")
+                    return@rememberLauncherForActivityResult
+                }
+                Log.i("CAMERA", "Successfully took a picture!")
+
+                Log.d("PhotoPicker", "Taken image URI: $cameraImageUri")
+                setImageUri(cameraImageUri)
+                val saved = saveImageFromUri(context, cameraImageUri.toUri())
+                setSavedImageUri(saved.toString())
+                Log.d("PhotoPicker", "Saved taken image to URI: $saved")
+            }
+        }
 
     // Registers a photo picker activity launcher in single-select mode.
     val pickMedia =
@@ -117,6 +125,31 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
                 Log.d("PhotoPicker", "No media selected")
             }
         }
+
+    fun takePicture() {
+        if (hasCameraPermission) {
+            val timeStamp =
+                SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val imageFileName = "JPEG_${timeStamp}_"
+            val storageDir = context.getExternalFilesDir(null)
+            val imageFile = File.createTempFile(imageFileName, ".jpg", storageDir)
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                imageFile
+            )
+            setCameraImageUri(uri.toString())
+            cameraLauncher.launch(uri)
+        } else {
+            permissionLauncher.launch(android.Manifest.permission.CAMERA)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (openCamera) {
+            takePicture()
+        }
+    }
 
     Column() {
         Spacer(Modifier.size(getTopInset(LocalView.current, LocalDensity.current) + 24.dp))
@@ -139,21 +172,8 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
             )
         }
         Button(
-            onClick = { if (hasCameraPermission) {
-                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val imageFileName = "JPEG_${timeStamp}_"
-                val storageDir = context.getExternalFilesDir(null)
-                val imageFile = File.createTempFile(imageFileName, ".jpg", storageDir)
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    imageFile
-                )
-                setCameraImageUri(uri.toString())
-                cameraLauncher.launch(uri)
-            } else {
-                permissionLauncher.launch(android.Manifest.permission.CAMERA)
-            }
+            onClick = {
+                takePicture()
             },
         ) {
             Text(
@@ -162,7 +182,15 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
         }
         Spacer(Modifier.size(56.dp))
         Button(
-            onClick = { onAddFood(Food(name = name, description = description, imageUrl = savedImageUri)) },
+            onClick = {
+                onAddFood(
+                    Food(
+                        name = name,
+                        description = description,
+                        imageUrl = savedImageUri
+                    )
+                )
+            },
             modifier = Modifier.align(
                 Alignment.CenterHorizontally
             )

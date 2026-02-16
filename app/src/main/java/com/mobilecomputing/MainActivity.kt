@@ -32,6 +32,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
+import androidx.navigation.toRoute
 import com.mobilecomputing.db.AppDatabase
 import com.mobilecomputing.db.Food
 import com.mobilecomputing.db.FoodRepository
@@ -52,7 +53,7 @@ import kotlin.math.sqrt
 
 
 @Serializable
-object AddFood
+data class AddFood(val openCamera: Boolean = false)
 
 @Serializable
 object FoodView
@@ -65,7 +66,7 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
         events.collect { event ->
             when (event) {
                 is MainEvent.OpenAddFoodCamera ->
-                    navController.navigate(AddFood)
+                    navController.navigate(AddFood(true))
             }
         }
     }
@@ -92,11 +93,12 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                 )
             }
         }
-        composable<AddFood> {
+        composable<AddFood> { backStackEntry ->
+            val openCamera = backStackEntry.toRoute<AddFood>().openCamera
             AddFoodPage(onAddFood = { food: Food ->
                 foodViewModel.insert(food)
                 navController.navigateUp()
-            })
+            }, openCamera = openCamera)
         }
     }
 }
