@@ -89,7 +89,7 @@ fun App(foodViewModel: FoodViewModel) {
 }
 
 fun magnitude(vec: FloatArray): Float {
-    return sqrt(vec[0].pow(2)+vec[1].pow(2)+vec[2].pow(2))
+    return sqrt(vec[0].pow(2) + vec[1].pow(2) + vec[2].pow(2))
 }
 
 class MainActivity : ComponentActivity() {
@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
         }
 
         var index: Int = 0
+
         // [x, y, z, mag, sharp?]
         val history: Array<FloatArray> = Array(HISTORY_SIZE) { FloatArray(HISTORY_ENTRY_LEN) }
         var shakeCooldown: Int = 0
@@ -133,14 +134,17 @@ class MainActivity : ComponentActivity() {
                 val sumMag = magnitude(floatArrayOf(sum[0], sum[1], sum[2]))
                 val magSum = sum[3]
 //                Log.i("ACCELEROMETER", "${sum[0]},${sum[1]},${sum[2]},${sum[3]},${sum[4]}: sumMag ${sumMag}, magSum ${magSum}")
-                if (magSum > sumMag*10) {
+                if (magSum > sumMag * 10) {
 //                    Log.i("ACCELEROMETER", "sharp!")
                     sharp = 1f
                 }
 
                 // a total of 3 sharps indicates a shake
                 if (sum[4] >= 3) {
-                    this@SensorListener.context.showAlert("TODO: Open camera", "Shaking the device would open the camera for adding a new food.")
+                    this@SensorListener.context.showAlert(
+                        "TODO: Open camera",
+                        "Shaking the device would open the camera for adding a new food."
+                    )
                     Log.i("ACCELEROMETER", "shake!")
                     shakeCooldown = SHAKE_COOLDOWN
                     index = 0
@@ -150,7 +154,7 @@ class MainActivity : ComponentActivity() {
 
             history[index] = values + floatArrayOf(magnitude, sharp)
             index = (index + 1) % HISTORY_SIZE
-            shakeCooldown = max(0, shakeCooldown-1)
+            shakeCooldown = max(0, shakeCooldown - 1)
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -190,7 +194,8 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent: PendingIntent =
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("My notification")
@@ -237,7 +242,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         sensorListener = SensorListener(this)
-        mAccel?.also {accel->
+        mAccel?.also { accel ->
             sensorManager.registerListener(sensorListener, accel, SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
@@ -288,7 +293,22 @@ class MainActivity : ComponentActivity() {
                 //                                        grantResults: IntArray)
                 // to handle the case where the user grants the permission. See the documentation
                 // for ActivityCompat#requestPermissions for more details.
-                ActivityCompat.requestPermissions(this@MainActivity, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 10)
+                ActivityCompat.requestPermissions(
+                    this@MainActivity,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    10
+                )
+                // todo the following doesn't work:
+//                ActivityCompat.OnRequestPermissionsResultCallback { requestCode, permissions, grantResults ->
+//                    if (requestCode != 10) return@OnRequestPermissionsResultCallback;
+//                    if (grantResults.contains(PackageManager.PERMISSION_DENIED)) {
+//                        showAlert(
+//                            "Warning",
+//                            "Allowing notifications helps you stay up to date with latest updates!"
+//                        )
+//                    }
+//                }
+
                 //return@with
             }
 

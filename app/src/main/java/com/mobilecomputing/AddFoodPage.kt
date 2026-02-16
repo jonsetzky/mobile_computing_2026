@@ -1,6 +1,7 @@
 package com.mobilecomputing
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
 import android.view.View
@@ -25,17 +26,34 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import coil3.compose.AsyncImage
+import coil3.toUri
 import com.mobilecomputing.db.Food
 import java.io.File
 import java.net.URI
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
+import java.util.jar.Manifest
+import kotlin.io.path.toPath
+
+fun genImageUri(context: Context): URI {
+    val uid = UUID.randomUUID().toString()
+    val path = FileSystems.getDefault().getPath(context.filesDir.toString(), uid);
+    return path.toUri()
+}
 
 fun saveImageFromUri(context: Context, uri: Uri): URI {
-    val uid = UUID.randomUUID().toString()
-    val file = File(context.filesDir, uid)
+    val file = File(genImageUri(context))
     val resolver = context.contentResolver
     resolver.openInputStream(uri).use { stream ->
         stream?.copyTo(file.outputStream())
@@ -60,6 +78,29 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
     val (description, setDescription) = remember { mutableStateOf("") }
     val (imageUri, setImageUri) = remember { mutableStateOf("") }
     val (savedImageUri, setSavedImageUri) = remember { mutableStateOf("") }
+
+    val (cameraImageUri, setCameraImageUri) = remember { mutableStateOf("") }
+    val (hasCameraPermission, setHasCameraPermission) = remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        setHasCameraPermission(isGranted)
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            if (cameraImageUri.isEmpty()) {
+                Log.e("PhotoPicker", "Cannot save image because cameraImageUri is null!")
+                return@rememberLauncherForActivityResult
+            }
+            Log.i("CAMERA", "Successfully took a picture!")
+
+            Log.d("PhotoPicker", "Taken image URI: $cameraImageUri")
+            setImageUri(cameraImageUri)
+            val saved = saveImageFromUri(context, cameraImageUri.toUri())
+            setSavedImageUri(saved.toString())
+            Log.d("PhotoPicker", "Saved taken image to URI: $saved")
+        }
+    }
 
     // Registers a photo picker activity launcher in single-select mode.
     val pickMedia =
@@ -95,6 +136,28 @@ fun AddFoodPage(onAddFood: (Food) -> Unit) {
         ) {
             Text(
                 fontSize = 8.em, text = "Add image"
+            )
+        }
+        Button(
+            onClick = { if (hasCameraPermission) {
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val imageFileName = "JPEG_${timeStamp}_"
+                val storageDir = context.getExternalFilesDir(null)
+                val imageFile = File.createTempFile(imageFileName, ".jpg", storageDir)
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    imageFile
+                )
+                setCameraImageUri(uri.toString())
+                cameraLauncher.launch(uri)
+            } else {
+                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+            }
+            },
+        ) {
+            Text(
+                fontSize = 8.em, text = "Take image"
             )
         }
         Spacer(Modifier.size(56.dp))
