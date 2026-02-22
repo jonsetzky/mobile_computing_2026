@@ -87,7 +87,7 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
             } else {
                 FoodPage(
                     food = food ?: throw NullPointerException("food is null."),
-                    onAddFoodClick = { navController.navigate(route = AddFood) },
+                    onAddFoodClick = { navController.navigate(route = AddFood(false)) },
                     onNextFoodClick = if (foodCount <= currentFoodIndex + 1) null else fun() { foodViewModel.loadNextFood() },
                     onPrevFoodClick = if (currentFoodIndex == 0) null else fun() { foodViewModel.loadPreviousFood() }
                 )
