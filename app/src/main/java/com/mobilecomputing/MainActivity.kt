@@ -93,6 +93,10 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                     onPrevFoodClick = if (!hasPrevFood) null else fun() { foodViewModel.loadPreviousFood() },
                     onAddComment = { foodId: Int, newComment: String ->
                         foodViewModel.insert(FoodComment(foodId = foodId, content = newComment));
+                    },
+                    onSettingsClick = {
+                        Log.i("NAV", "to settings");
+//                        navController.navigate(route = AddFood(false))
                     }
                 )
             }

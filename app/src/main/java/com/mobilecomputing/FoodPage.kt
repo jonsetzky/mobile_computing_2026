@@ -20,13 +20,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -59,21 +64,41 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AddFoodButton(onAddFoodClick: () -> Unit) {
-    Row(Modifier.zIndex(100.0f)) {
-        Spacer(Modifier.weight(1f))
-        Button(
-            onClick = {
-                onAddFoodClick()
-            },
-            modifier = Modifier.padding(end = 12.dp, top = 42.dp),
-            contentPadding = PaddingValues(3.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
-        ) {
-            Text(
-                style = MaterialTheme.typography.titleLarge, fontSize = 8.em, text = "\uff0b"
-            )
-        }
+    Button(
+        onClick = {
+            onAddFoodClick()
+        },
+        modifier = Modifier.padding(end = 12.dp, top = 52.dp),
+        contentPadding = PaddingValues(3.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "Settings",
+            modifier = Modifier.size(52.dp).padding(8.dp)
+        )
     }
+
+}
+
+
+@Composable
+fun SettingsButton(onSettingsClick: () -> Unit) {
+    Button(
+        onClick = {
+            onSettingsClick()
+        },
+        modifier = Modifier.padding(start = 12.dp, top = 52.dp),
+        contentPadding = PaddingValues(3.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Settings,
+            contentDescription = "Settings",
+            modifier = Modifier.size(52.dp).padding(8.dp)
+        )
+    }
+
 }
 
 @Composable
@@ -237,13 +262,17 @@ fun CommentSection(
     ) {
         OutlinedTextField(
             keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Send
-        ), keyboardActions = KeyboardActions(
-            onSend = {
-                if (newComment.isEmpty()) return@KeyboardActions;
-                addComment(newComment);
-                setNewComment("");
-            }), value = newComment, onValueChange = { v -> setNewComment(v) }, singleLine = false
+                imeAction = ImeAction.Send
+            ),
+            keyboardActions = KeyboardActions(
+                onSend = {
+                    if (newComment.isEmpty()) return@KeyboardActions;
+                    addComment(newComment);
+                    setNewComment("");
+                }),
+            value = newComment,
+            onValueChange = { v -> setNewComment(v) },
+            singleLine = false
         )
 
         TextButton(
@@ -330,6 +359,7 @@ fun FoodDetails(
 fun FoodPage(
     food: FoodWithComments,
     onAddFoodClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     /** (foodId, newComment) */
     onAddComment: (Int, String) -> Unit,
     onNextFoodClick: (() -> Unit)?,
@@ -341,7 +371,11 @@ fun FoodPage(
 
 
     if (!expanded) {
-        AddFoodButton(onAddFoodClick = onAddFoodClick)
+        Row(Modifier.zIndex(100.0f)) {
+            SettingsButton(onSettingsClick = onSettingsClick)
+            Spacer(Modifier.weight(1f))
+            AddFoodButton(onAddFoodClick = onAddFoodClick)
+        }
     }
     FoodHeroView(food, expanded, setExpanded)
     AnimatedVisibility(
