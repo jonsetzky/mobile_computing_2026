@@ -101,7 +101,9 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                 )
             }
         }
-        composable<AddFood> { backStackEntry ->
+        composable<AddFood>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None }) { backStackEntry ->
             val openCamera = backStackEntry.toRoute<AddFood>().openCamera
             AddFoodPage(onAddFood = { food: Food ->
                 foodViewModel.insert(food)
