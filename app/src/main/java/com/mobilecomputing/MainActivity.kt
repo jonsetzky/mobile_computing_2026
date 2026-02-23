@@ -35,6 +35,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.toRoute
 import com.mobilecomputing.db.AppDatabase
 import com.mobilecomputing.db.Food
+import com.mobilecomputing.db.FoodComment
 import com.mobilecomputing.db.FoodRepository
 import com.mobilecomputing.db.FoodViewModel
 import com.mobilecomputing.db.FoodViewModelFactory
@@ -79,8 +80,8 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None }) {
             val food by foodViewModel.currentFood.collectAsState()
-            val foodCount by foodViewModel.foodCount.collectAsState()
-            val currentFoodIndex by foodViewModel.currentFoodIndex.collectAsState()
+            val hasNextFood by foodViewModel.hasNextFood.collectAsState();
+            val hasPrevFood by foodViewModel.hasPrevFood.collectAsState();
 
             if (food == null) {
                 Text("waiting for food")
@@ -88,8 +89,11 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                 FoodPage(
                     food = food ?: throw NullPointerException("food is null."),
                     onAddFoodClick = { navController.navigate(route = AddFood(false)) },
-                    onNextFoodClick = if (foodCount <= currentFoodIndex + 1) null else fun() { foodViewModel.loadNextFood() },
-                    onPrevFoodClick = if (currentFoodIndex == 0) null else fun() { foodViewModel.loadPreviousFood() }
+                    onNextFoodClick = if (!hasNextFood) null else fun() { foodViewModel.loadNextFood() },
+                    onPrevFoodClick = if (!hasPrevFood) null else fun() { foodViewModel.loadPreviousFood() },
+                    onAddComment = { foodId: Int, newComment: String ->
+                        foodViewModel.insert(FoodComment(foodId = foodId, content = newComment));
+                    }
                 )
             }
         }

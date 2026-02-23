@@ -25,9 +25,18 @@ import com.mobilecomputing.R
 import com.mobilecomputing.db.AppDatabase.Companion.databaseReady
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import java.io.File
@@ -53,10 +62,8 @@ data class FoodComment(
 data class FoodWithComments(
     @Embedded val food: Food,
     @Relation(
-        parentColumn = "uid",
-        entityColumn = "foodId"
-    )
-    val comments: List<FoodComment>,
+        parentColumn = "uid", entityColumn = "foodId"
+    ) val comments: List<FoodComment>,
 )
 
 
@@ -71,8 +78,11 @@ interface FoodDao {
     @Insert
     suspend fun insert(food: Food)
 
+    @Insert
+    suspend fun insert(comment: FoodComment)
+
     @Query("SELECT COUNT(*) FROM food")
-    suspend fun getFoodCount(): Int
+    fun getFoodCount(): Flow<Int>
 
     @Query("SELECT * FROM food WHERE uid < :currentUid ORDER BY uid DESC LIMIT 1")
     suspend fun getPreviousFood(currentUid: Int): Food?
@@ -80,24 +90,43 @@ interface FoodDao {
     @Query("SELECT * FROM food WHERE uid > :currentUid ORDER BY uid ASC LIMIT 1")
     suspend fun getNextFood(currentUid: Int): Food?
 
+    @Query("SELECT uid FROM food WHERE uid < :currentUid ORDER BY uid DESC LIMIT 1")
+    suspend fun getPrevFoodId(currentUid: Int): Int?
+
+    @Query("SELECT uid FROM food WHERE uid > :currentUid ORDER BY uid ASC LIMIT 1")
+    suspend fun getNextFoodId(currentUid: Int): Int?
+
     @Query("SELECT * FROM food ORDER BY uid ASC LIMIT 1")
     suspend fun getFirstFood(): Food?
 
+    @Query("SELECT uid FROM food ORDER BY uid ASC LIMIT 1")
+    suspend fun getFirstFoodId(): Int?
+
+    @Transaction
+    @Query("SELECT * FROM food WHERE uid == :currentUid ORDER BY uid DESC LIMIT 1")
+    fun getFoodWithComments(currentUid: Int?): Flow<FoodWithComments?>
+
     @Transaction
     @Query("SELECT * FROM food WHERE uid < :currentUid ORDER BY uid DESC LIMIT 1")
-    suspend fun getPreviousFoodWithComments(currentUid: Int): FoodWithComments?
+    fun getPreviousFoodWithComments(currentUid: Int?): Flow<FoodWithComments?>
 
     @Transaction
     @Query("SELECT * FROM food WHERE uid > :currentUid ORDER BY uid ASC LIMIT 1")
-    suspend fun getNextFoodWithComments(currentUid: Int): FoodWithComments?
+    fun getNextFoodWithComments(currentUid: Int?): Flow<FoodWithComments?>
 
     @Transaction
     @Query("SELECT * FROM food ORDER BY uid ASC LIMIT 1")
-    suspend fun getFirstFoodWithComments(): FoodWithComments?
+    fun getFirstFoodWithComments(): Flow<FoodWithComments?>
+
 
 }
 
-@Database(entities = [Food::class, FoodComment::class], version = 2, autoMigrations = [AutoMigration(from = 1, to = 2)], exportSchema = true)
+@Database(
+    entities = [Food::class, FoodComment::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    exportSchema = true
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 
@@ -152,8 +181,18 @@ class FoodRepository(private val foodDao: FoodDao) {
     }
 
     @WorkerThread
+    suspend fun insert(comment: FoodComment) {
+        foodDao.insert(comment);
+    }
+
+    @WorkerThread
     suspend fun getFirstFood(): Food? {
         return foodDao.getFirstFood()
+    }
+
+    @WorkerThread
+    fun getFoodWithComments(currentUid: Int?): Flow<FoodWithComments?> {
+        return foodDao.getFoodWithComments(currentUid);
     }
 
     @WorkerThread
@@ -167,83 +206,130 @@ class FoodRepository(private val foodDao: FoodDao) {
     }
 
     @WorkerThread
-    suspend fun getFoodCount(): Int {
+    fun getFoodCount(): Flow<Int> {
         return foodDao.getFoodCount()
     }
 
     @WorkerThread
-    suspend fun getFirstFoodWithComments(): FoodWithComments? {
+    suspend fun getFirstFoodWithComments(): Flow<FoodWithComments?> {
         return foodDao.getFirstFoodWithComments()
     }
 
     @WorkerThread
-    suspend fun getNextFoodWithComments(currentUid: Int): FoodWithComments? {
+    fun getNextFoodWithComments(currentUid: Int?): Flow<FoodWithComments?> {
         return foodDao.getNextFoodWithComments(currentUid)
     }
 
     @WorkerThread
-    suspend fun getPreviousFoodWithComments(currentUid: Int): FoodWithComments? {
+    fun getPreviousFoodWithComments(currentUid: Int?): Flow<FoodWithComments?> {
         return foodDao.getPreviousFoodWithComments(currentUid)
     }
 
     @WorkerThread
-    suspend fun getFoodCountWithComments(): Int {
-        return foodDao.getFoodCount()
+    suspend fun getFirstFoodId(): Int? {
+        return foodDao.getFirstFoodId()
+    }
+
+    @WorkerThread
+    suspend fun getNextFoodId(currentUid: Int?): Int? {
+        if (currentUid == null) return null;
+        return foodDao.getNextFoodId(currentUid)
+    }
+
+    @WorkerThread
+    suspend fun getPrevFoodId(currentUid: Int?): Int? {
+        if (currentUid == null) return null;
+        return foodDao.getPrevFoodId(currentUid)
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
+    private val currentFoodId = MutableStateFlow<Int?>(null);
 
-    private val _currentFood = MutableStateFlow<FoodWithComments?>(null)
-    val currentFood: StateFlow<FoodWithComments?> = _currentFood.asStateFlow()
+    val currentFood: StateFlow<FoodWithComments?> = currentFoodId.filterNotNull().flatMapLatest { id ->
+        repository.getFoodWithComments(id)
+    }.stateIn(
+    viewModelScope, SharingStarted.WhileSubscribed(5000), null
+    )
 
-    private val _foodCount = MutableStateFlow<Int>(0)
-    val foodCount: StateFlow<Int> = _foodCount.asStateFlow()
+    private val prevFoodId = MutableStateFlow<Int?>(null);
+    // hasPrevFood generated with AI
+    val hasPrevFood: StateFlow<Boolean> =
+        prevFoodId
+            .map { it != null }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                false
+            )
+    private val nextFoodId = MutableStateFlow<Int?>(null);
+    // hasNextFood generated with AI
+    val hasNextFood: StateFlow<Boolean> =
+        nextFoodId
+            .map { it != null }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                false
+            )
+
+    val foodCount: StateFlow<Int> = repository.getFoodCount().stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), 0
+    );
 
     private val _currentFoodIndex = MutableStateFlow<Int>(0)
     val currentFoodIndex = _currentFoodIndex.asStateFlow()
 
+
     init {
         // Load the first food when ViewModel starts
         viewModelScope.launch {
-            var firstFood = repository.getFirstFoodWithComments()
-            if (firstFood == null)
+            currentFoodId.value = repository.getFirstFoodId();
+            Log.i("DB", "got first food id ${currentFoodId.value}")
+            if (currentFoodId.value == null) {
+                Log.i("DB", "waiting for db to get ready")
                 databaseReady.await()
-            firstFood = repository.getFirstFoodWithComments()
-            _currentFood.value = firstFood
+            }
             _currentFoodIndex.value = 0
-            _foodCount.value = repository.getFoodCount()
+            updateNextAndPrev();
         }
+    }
+
+    private fun updateNextAndPrev() = viewModelScope.launch {
+        nextFoodId.value = repository.getNextFoodId(currentFoodId.value)
+        prevFoodId.value = repository.getPrevFoodId(currentFoodId.value)
     }
 
     fun insert(food: Food) = viewModelScope.launch {
         repository.insert(food)
-        _foodCount.value += 1
+    }
+
+    fun insert(comment: FoodComment) = viewModelScope.launch {
+        repository.insert(comment)
     }
 
     fun loadNextFood() {
         viewModelScope.launch {
-            val uid = _currentFood.value?.food?.uid ?: throw NullPointerException("currentfood is null")
-            val next = repository.getNextFoodWithComments(uid)
-            if (next == null) {
+            if (nextFoodId.value == null) {
                 Log.w("WARN", "Trying to go to next food despite it being null")
-                return@launch
+                return@launch;
             }
-            _currentFood.value = next
-            _currentFoodIndex.value += 1
+
+            currentFoodId.value = nextFoodId.value;
+            updateNextAndPrev();
         }
     }
 
     fun loadPreviousFood() {
         viewModelScope.launch {
-            val uid = _currentFood.value?.food?.uid ?: throw NullPointerException("currentfood is null")
-            val prev = repository.getPreviousFoodWithComments(uid)
-            if (prev == null) {
+            if (prevFoodId.value == null) {
                 Log.w("WARN", "Trying to go to previous food despite it being null")
-                return@launch
+                return@launch;
             }
-            _currentFood.value = prev
-            _currentFoodIndex.value -= 1
+
+            currentFoodId.value = prevFoodId.value;
+            updateNextAndPrev();
         }
     }
 
