@@ -154,6 +154,7 @@ fun FoodHeroView(food: FoodWithComments, expanded: Boolean, setExpanded: (Boolea
     ) {
         FoodImage(
             modifier = Modifier
+                .fillMaxSize()
                 .align(
                     // https://stackoverflow.com/questions/68726503/jetpack-compose-how-do-you-position-ui-elements-within-their-parent-with-exact
                     BiasAlignment(0.0f, 0.0f)
