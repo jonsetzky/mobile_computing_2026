@@ -109,14 +109,12 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
             AddFoodPage(onAddFood = { food: Food ->
                 foodViewModel.insert(food)
                 navController.navigateUp()
-            }, openCamera = openCamera)
+            }, openCamera = openCamera, navigateBack = { navController.navigateUp() })
         }
         composable<SettingsView>(
             enterTransition = { EnterTransition.None },
             exitTransition = { ExitTransition.None }) {
-            SettingsPage(navigateBack = {
-                navController.navigateUp()
-            })
+            SettingsPage(navigateBack = { navController.navigateUp() })
         }
     }
 }

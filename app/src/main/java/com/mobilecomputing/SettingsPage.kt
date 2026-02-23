@@ -51,8 +51,7 @@ fun ToggleSetting(
         ) {
             Text(style = MaterialTheme.typography.bodyMedium, text = label)
             if (!enabled && disabledMessage != null) Text(
-                style = MaterialTheme.typography.bodySmall,
-                text = disabledMessage
+                style = MaterialTheme.typography.bodySmall, text = disabledMessage
             )
 
         }

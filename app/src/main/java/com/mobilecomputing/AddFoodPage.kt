@@ -9,8 +9,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -20,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -73,7 +79,7 @@ fun getTopInset(view: View, density: Density): Dp {
 }
 
 @Composable
-fun AddFoodPage(onAddFood: (Food) -> Unit, openCamera: Boolean) {
+fun AddFoodPage(onAddFood: (Food) -> Unit, openCamera: Boolean, navigateBack: () -> Unit) {
     val context = LocalContext.current
     val (name, setName) = remember { mutableStateOf("") }
     val (description, setDescription) = remember { mutableStateOf("") }
@@ -154,52 +160,68 @@ fun AddFoodPage(onAddFood: (Food) -> Unit, openCamera: Boolean) {
     Column() {
         Spacer(Modifier.size(getTopInset(LocalView.current, LocalDensity.current) + 24.dp))
 
-        Text(
-            style = MaterialTheme.typography.titleLarge, fontSize = 8.em, text = "Create a new food"
-        )
-        Text("Name")
-        TextField(value = name, onValueChange = { v -> setName(v) }, singleLine = true)
-        Text("Description")
-        TextField(
-            value = description, onValueChange = { v -> setDescription(v) }, singleLine = false
-        )
-        Spacer(Modifier.size(10.dp))
-        Button(
-            onClick = { pickMedia.launch(arrayOf("image/*")) },
-        ) {
-            Text(
-                fontSize = 8.em, text = "Add image"
-            )
-        }
         Button(
             onClick = {
-                takePicture()
-            },
+                navigateBack();
+            }, colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
         ) {
-            Text(
-                fontSize = 8.em, text = "Take image"
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Close Settings",
+                tint = Color.Black,
+                modifier = Modifier.size(48.dp)
             )
         }
-        Spacer(Modifier.size(56.dp))
-        Button(
-            onClick = {
-                onAddFood(
-                    Food(
-                        name = name,
-                        description = description,
-                        imageUrl = savedImageUri
-                    )
-                )
-            },
-            modifier = Modifier.align(
-                Alignment.CenterHorizontally
-            )
-        ) {
 
+        Column(modifier = Modifier.padding(all = 12.dp)) {
             Text(
-                fontSize = 8.em, text = "Create"
+                style = MaterialTheme.typography.headlineLarge, text = "Create a new food"
             )
+
+            Text("Name")
+            TextField(value = name, onValueChange = { v -> setName(v) }, singleLine = true)
+            Text("Description")
+            TextField(
+                value = description, onValueChange = { v -> setDescription(v) }, singleLine = false
+            )
+            Spacer(Modifier.size(10.dp))
+            Button(
+                onClick = { pickMedia.launch(arrayOf("image/*")) },
+            ) {
+                Text(
+                    fontSize = 8.em, text = "Add image"
+                )
+            }
+            Button(
+                onClick = {
+                    takePicture()
+                },
+            ) {
+                Text(
+                    fontSize = 8.em, text = "Take image"
+                )
+            }
+            Spacer(Modifier.size(56.dp))
+            Button(
+                onClick = {
+                    onAddFood(
+                        Food(
+                            name = name,
+                            description = description,
+                            imageUrl = savedImageUri
+                        )
+                    )
+                },
+                modifier = Modifier.align(
+                    Alignment.CenterHorizontally
+                )
+            ) {
+
+                Text(
+                    fontSize = 8.em, text = "Create"
+                )
+            }
+            AsyncImage(model = imageUri, contentDescription = null)
         }
-        AsyncImage(model = imageUri, contentDescription = null)
     }
 }
