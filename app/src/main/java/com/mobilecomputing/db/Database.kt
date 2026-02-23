@@ -7,6 +7,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -96,7 +97,7 @@ interface FoodDao {
 
 }
 
-@Database(entities = [Food::class], version = 1)
+@Database(entities = [Food::class, FoodComment::class], version = 2, autoMigrations = [AutoMigration(from = 1, to = 2)], exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 
@@ -106,6 +107,7 @@ abstract class AppDatabase : RoomDatabase() {
         private var INSTANCE: AppDatabase? = null
         val databaseReady = CompletableDeferred<Unit>()
         fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
+
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext, AppDatabase::class.java, "food_database"
