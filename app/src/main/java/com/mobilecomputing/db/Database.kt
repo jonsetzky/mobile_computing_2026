@@ -26,6 +26,7 @@ import com.mobilecomputing.db.AppDatabase.Companion.databaseReady
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -285,13 +286,14 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
     init {
         // Load the first food when ViewModel starts
         viewModelScope.launch {
-            currentFoodId.value = repository.getFirstFoodId();
-            Log.i("DB", "got first food id ${currentFoodId.value}")
-            if (currentFoodId.value == null) {
+            var firstFoodId = repository.getFirstFoodId();
+            while (firstFoodId == null) {
                 Log.i("DB", "waiting for db to get ready")
-                databaseReady.await()
-                currentFoodId.value = repository.getFirstFoodId();
+                delay(500) // wait 500ms before checking again
+                firstFoodId = repository.getFirstFoodId()
             }
+            Log.i("DB", "first food id $firstFoodId")
+            currentFoodId.value = firstFoodId;
             _currentFoodIndex.value = 0
             updateNextAndPrev();
         }
