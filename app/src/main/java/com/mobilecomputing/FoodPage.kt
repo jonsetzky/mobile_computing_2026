@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.zIndex
 import coil3.compose.AsyncImage
 import com.mobilecomputing.db.Food
+import com.mobilecomputing.db.FoodWithComments
 import kotlinx.coroutines.launch
 
 @Composable
@@ -119,13 +120,13 @@ fun FoodImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
     colorFilter: ColorFilter? = null,
-    food: Food
+    food: FoodWithComments
 ) {
-    val uri = food.imageUrl
+    val uri = food.food.imageUrl
     if (uri == null) {
         Image(
             painter = painterResource(R.drawable.cheesecake),
-            contentDescription = food.name,
+            contentDescription = food.food.name,
             contentScale = contentScale,
             modifier = modifier,
             colorFilter = colorFilter
@@ -133,7 +134,7 @@ fun FoodImage(
     } else {
         AsyncImage(
             model = uri,
-            contentDescription = food.name,
+            contentDescription = food.food.name,
             contentScale = contentScale,
             modifier = modifier,
             colorFilter = colorFilter
@@ -142,7 +143,7 @@ fun FoodImage(
 }
 
 @Composable
-fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) {
+fun FoodHeroView(food: FoodWithComments, expanded: Boolean, setExpanded: (Boolean) -> Unit) {
     Box(
         Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -175,7 +176,7 @@ fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) 
                         .alpha(1.0f)
                 )
                 Text(
-                    text = food.name ?: "n/a",
+                    text = food.food.name ?: "n/a",
                     modifier = Modifier
                         .align(
                             Alignment.BottomStart
@@ -195,7 +196,7 @@ fun FoodHeroView(food: Food, expanded: Boolean, setExpanded: (Boolean) -> Unit) 
 
 @Composable
 fun FoodDetails(
-    food: Food,
+    food: FoodWithComments,
     expanded: Boolean,
     setExpanded: (Boolean) -> Unit
 ) {
@@ -237,7 +238,7 @@ fun FoodDetails(
                 )
             }
             Text(
-                text = food.name ?: "n/a",
+                text = food.food.name ?: "n/a",
                 style = MaterialTheme.typography.titleLarge,
                 fontSize = 8.em,
                 color = Color.Black,
@@ -246,7 +247,7 @@ fun FoodDetails(
                     .padding(bottom = 0.dp),
             )
             Text(
-                text = food.description ?: "n/a",
+                text = food.food.description ?: "n/a",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Black,
                 modifier = Modifier
@@ -258,7 +259,7 @@ fun FoodDetails(
 
 @Composable
 fun FoodPage(
-    food: Food,
+    food: FoodWithComments,
     onAddFoodClick: () -> Unit,
     onNextFoodClick: (() -> Unit)?,
     onPrevFoodClick: (() -> Unit)?
