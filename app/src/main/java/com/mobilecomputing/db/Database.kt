@@ -290,6 +290,7 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
             if (currentFoodId.value == null) {
                 Log.i("DB", "waiting for db to get ready")
                 databaseReady.await()
+                currentFoodId.value = repository.getFirstFoodId();
             }
             _currentFoodIndex.value = 0
             updateNextAndPrev();

@@ -59,6 +59,9 @@ data class AddFood(val openCamera: Boolean = false)
 @Serializable
 object FoodView
 
+@Serializable
+object SettingsView
+
 @Composable
 fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
     val navController = rememberNavController();
@@ -66,8 +69,7 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
     LaunchedEffect(Unit) {
         events.collect { event ->
             when (event) {
-                is MainEvent.OpenAddFoodCamera ->
-                    navController.navigate(AddFood(true))
+                is MainEvent.OpenAddFoodCamera -> navController.navigate(AddFood(true))
             }
         }
     }
@@ -96,9 +98,8 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                     },
                     onSettingsClick = {
                         Log.i("NAV", "to settings");
-//                        navController.navigate(route = AddFood(false))
-                    }
-                )
+                        navController.navigate(route = SettingsView)
+                    })
             }
         }
         composable<AddFood>(
@@ -109,6 +110,13 @@ fun App(foodViewModel: FoodViewModel, events: Flow<MainEvent>) {
                 foodViewModel.insert(food)
                 navController.navigateUp()
             }, openCamera = openCamera)
+        }
+        composable<SettingsView>(
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None }) {
+            SettingsPage(navigateBack = {
+                navController.navigateUp()
+            })
         }
     }
 }
@@ -193,13 +201,10 @@ class MainActivity : ComponentActivity() {
 
     public fun showAlert(title: String, message: String) {
         runOnUiThread {
-            AlertDialog.Builder(this)
-                .setTitle(title)
-                .setMessage(message)
+            AlertDialog.Builder(this).setTitle(title).setMessage(message)
                 .setPositiveButton("OK") { dialog, _ ->
                     dialog.dismiss()
-                }
-                .show()
+                }.show()
         }
     }
 
@@ -211,9 +216,7 @@ class MainActivity : ComponentActivity() {
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
-            CHANNEL_ID,
-            "foodtok_notification_channel",
-            NotificationManager.IMPORTANCE_HIGH
+            CHANNEL_ID, "foodtok_notification_channel", NotificationManager.IMPORTANCE_HIGH
         ).apply {
             description = "foodtok notification channel"
         }
@@ -231,18 +234,15 @@ class MainActivity : ComponentActivity() {
         val pendingIntent: PendingIntent =
             PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("My notification")
-            .setContentText(message)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true);
+        val builder =
+            NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("My notification")
+                .setContentText(message).setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT).setContentIntent(pendingIntent)
+                .setAutoCancel(true);
 
         with(NotificationManagerCompat.from(this)) {
             if (ActivityCompat.checkSelfPermission(
-                    this@MainActivity,
-                    android.Manifest.permission.POST_NOTIFICATIONS
+                    this@MainActivity, android.Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 Log.e("NOTIFICATION", "Cannot send notification due to missing permissions")
@@ -316,8 +316,7 @@ class MainActivity : ComponentActivity() {
 
         with(NotificationManagerCompat.from(this)) {
             if (ActivityCompat.checkSelfPermission(
-                    this@MainActivity,
-                    android.Manifest.permission.POST_NOTIFICATIONS
+                    this@MainActivity, android.Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 // TODO: Consider calling
@@ -328,9 +327,7 @@ class MainActivity : ComponentActivity() {
                 // to handle the case where the user grants the permission. See the documentation
                 // for ActivityCompat#requestPermissions for more details.
                 ActivityCompat.requestPermissions(
-                    this@MainActivity,
-                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                    10
+                    this@MainActivity, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 10
                 )
                 // todo the following doesn't work:
 //                ActivityCompat.OnRequestPermissionsResultCallback { requestCode, permissions, grantResults ->
