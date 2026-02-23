@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -253,6 +254,35 @@ fun FoodDetails(
                 modifier = Modifier
                     .padding(all = 12.dp),
             )
+
+            Text(
+                text = "Comments",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.Black,
+                modifier = Modifier
+                    .padding(all = 12.dp),
+            )
+
+            if (food.comments.isEmpty()) {
+                Text(
+                    text = "no comments yet",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier
+                        .padding(all = 12.dp),
+                )
+            }
+
+            for (comment in food.comments) {
+                Text(
+                    text = comment.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Black,
+                    modifier = Modifier
+                        .padding(all = 12.dp),
+                )
+                HorizontalDivider()
+            }
         }
     }
 }
