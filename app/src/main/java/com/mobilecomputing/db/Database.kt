@@ -304,6 +304,9 @@ class FoodViewModel(private val repository: FoodRepository) : ViewModel() {
 
     fun insert(food: Food) = viewModelScope.launch {
         repository.insert(food)
+        if (nextFoodId.value == null) {
+            nextFoodId.value = repository.getNextFoodId(currentFoodId.value);
+        }
     }
 
     fun insert(comment: FoodComment) = viewModelScope.launch {
